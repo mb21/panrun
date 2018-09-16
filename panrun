@@ -1,0 +1,89 @@
+#!/usr/bin/env ruby
+
+# Usage: panrun input.md [options]
+# see https://github.com/mb21/panrun
+
+require 'yaml'
+
+input_file = ARGV[0]
+if input_file.nil? || input_file[0] == "-"
+  abort "Usage: panrun input.md [options]"
+end
+
+output_file = input_file + ".html"
+ARGV.each_with_index do |a, i|
+  if a == "-o" || a == "--output"
+    output_file = ARGV[i+1]
+  elsif a.start_with? "--output="
+    output_file = a[9..-1]
+  end
+end
+
+output_format = nil
+ARGV.each_with_index do |a, i|
+  if a == "-t" || a == "--to"
+    output_format = ARGV[i+1]
+  elsif a.start_with? "--to="
+    output_format = a[5..-1]
+  end
+end
+if output_format.nil?
+  if output_file.nil? || !output_file.include?(".")
+    abort "could not determine output format"
+  else
+    output_format = output_file.split(".").last
+  end
+end
+
+# ask pandoc for possible options
+pandoc_opts = %x(pandoc --bash-completion).scan(/opts\=\"([^"]*)/).first.first
+
+# strip the two preceding dashes and ignore one-letter variants
+pandoc_opts = pandoc_opts.split(' ').map do |o|
+  if o[0..1] == "--"
+    o[2..-1]
+  end
+end
+
+meta = YAML.load_file input_file
+args = []
+if meta = meta["output"]
+  out_key = output_format + "_document"
+  if meta = meta[out_key]
+    meta.each do |key, val|
+      # check whether `key` is an option that can be
+      # used with the installed pandoc version
+      if pandoc_opts.include? key
+        opt = key
+      else
+        # since RMarkdown YAML uses e.g. `toc_depth` instead of `toc-depth`
+        # try that as well:
+        key = key.gsub('_', '-')
+        if pandoc_opts.include? key
+          opt = key
+        end
+      end
+
+      if opt && val != false
+        args.push "--" ++ opt
+        if not (val.nil? || val.is_a?(TrueClass))
+          args.push val.to_s
+        end
+      end
+    end
+  else
+    abort "Could not find key 'output.#{out_key}' in YAML"
+  end
+else
+  abort "Could not find key 'output' in YAML"
+end
+
+if more_args = meta['pandoc_args']
+  args.concat more_args
+end
+
+args = ["pandoc", input_file] + args + ARGV[1..-1]
+
+STDERR.puts "panrun calling: " + args.join(' ')
+
+exec *args
