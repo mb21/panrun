@@ -1,15 +1,14 @@
 #!/usr/bin/env ruby
-
-# Usage: panrun input.md [pandoc-options]
-# see https://github.com/mb21/panrun
-
 require 'yaml'
 
+# determine input file
 input_file = ARGV[0]
 if input_file.nil? || input_file[0] == "-"
-  abort "Usage: panrun input.md [options]"
+  abort "Usage: panrun input.md [options]\n\n"\
+        'For more info, see https://github.com/mb21/panrun'
 end
 
+# determine output file
 output_file = input_file + ".html"
 ARGV.each_with_index do |a, i|
   if a == "-o" || a == "--output"
@@ -19,6 +18,7 @@ ARGV.each_with_index do |a, i|
   end
 end
 
+# determine output format
 output_format = nil
 ARGV.each_with_index do |a, i|
   if a == "-t" || a == "--to"
@@ -32,6 +32,9 @@ if output_format.nil?
     abort "could not determine output format"
   else
     output_format = output_file.split(".").last
+    if ["pdf", "tex"].include? output_format
+      output_format = "latex"
+    end
   end
 end
 
@@ -45,6 +48,7 @@ pandoc_opts = pandoc_opts.split(' ').map do |o|
   end
 end
 
+# convert a meta-hash to an arguments-array
 def get_args(meta, pandoc_opts)
   args = []
   meta.each do |key, val|
@@ -76,17 +80,17 @@ def get_args(meta, pandoc_opts)
 end
 
 args = if meta = YAML.load_file(input_file)["output"]
-         if meta[output_format]
-           # try e.g. output.html
-           get_args meta[output_format], pandoc_opts
+         # lookup format, else try various rmarkdown formats
+         if meta_out = meta[output_format]
+           get_args meta_out, pandoc_opts
+         elsif meta_doc = meta[output_format + "_document"]
+           get_args meta_doc, pandoc_opts
+         elsif output_format == "latex" && meta_pdf = meta["pdf_document"]
+           get_args meta_pdf, pandoc_opts
+         elsif meta_pres = meta[output_format + "_presentation"]
+           get_args meta_pres, pandoc_opts
          else
-           out_key = output_format + "_document"
-           if meta[out_key]
-             # try e.g. output.html_document
-             get_args meta[out_key], pandoc_opts
-           else
-             abort "Could not find anything in either 'output.#{output_format}' or 'output.#{out_key}' in YAML."
-           end
+           abort "Could not find YAML key for detected output format '#{output_format}'."
          end
        else
          abort "Could not find key 'output' in YAML"
