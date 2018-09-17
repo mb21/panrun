@@ -12,15 +12,23 @@ with the following `input.md`:
       html:
         standalone: true
         toc: true
-        toc-depth: 2
+        include-in-header:
+          - foo.css
+          - bar.js
       latex:
         toc: true
-        toc_depth: 3
+        toc-depth: 3
+        metadata:
+          subtitle: Some latex-only subtitle
     ---
 
     # my content
 
-Will execute `pandoc input.md --standalone --toc --toc-depth 2`.
+Will execute:
+
+    pandoc test.md --standalone --toc --include-in-header foo.css --include-in-header bar.js
+
+Note how panrun defaults to the `html` format.
 
 
 ## Usage
@@ -43,15 +51,14 @@ The input-file doesn't even have to be a markdown file. As long as it starts wit
 ## Design
 
 - Panrun should run with no dependencies except `ruby >= 2.3.3`, which is the builtin in macOS 10.13.
-- Fortunately, Ruby comes with a YAML parser, which is the same Jekyll uses.
-- Options unknown to your installed pandoc version are ignored.
+- Fortunately, Ruby comes with a YAML parser, which is the same one Jekyll uses.
+- Panrun doesn't hardcode or assume anything about the options. It simply asks your installed pandoc which options it suppors (through `pandoc --bash-completion`) and ignores the unknown options in your YAML.
 - The idea is to be somewhat compatible with [rmarkdown's document format](https://bookdown.org/yihui/rmarkdown/output-formats.html). Therefore you can use, for example, either the `html` or `html_document` key (or even `pdf_document` or `slidy_presentation`), or either `toc-depth` or `toc_depth`, and the value of `pandoc_args` is also passed on. (However, as opposed to rmarkdown, panrun doesn't do anything more than passing on the options it finds.) Question: is this useful to anyone, or does this introduce more confusion, since a lot of rmarkdown-options will be silently ignored?
 - If you're looking for more than a simple wrapper script, have a look at [panzer](https://github.com/msprev/panzer) or [pandocomatic](https://github.com/htdebeer/pandocomatic).
 - Work in progress, look at the source!
 - Possible TODOs:
-  - [ ] Look for non-format specific options directly in the `output` mapping.
+  - [ ] Look for non-format specific options directly in the `output` mapping?
   - [ ] Change usage to `panrun [options] input.md [pandoc-options]`. Options could be `-m theme.yaml`, which would also look for files in `~/.panrun`?
-  - [ ] What about options that can be used multiple times, like `-V`? Check whether value is array...
 
 
 ## Installation

@@ -66,9 +66,22 @@ def get_args(meta, pandoc_opts)
     end
 
     if opt && val != false
-      args.push "--" ++ opt
-      if not (val.nil? || val.is_a?(TrueClass))
-        args.push val.to_s
+      if val.is_a? Hash
+        val.each do |k, v|
+          args.push "--" ++ opt
+          args.push k ++ "=" ++ v
+        end
+      elsif val.is_a? Array
+        val.each do |v|
+          args.push "--" ++ opt
+          args.push v
+        end
+      else
+        args.push "--" ++ opt
+        if not (val.nil? || val.is_a?(TrueClass))
+          # try to only include a value for an option that takes one
+          args.push val.to_s
+        end
       end
     end
   end
