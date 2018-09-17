@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 
-# Usage: panrun input.md [options]
+# Usage: panrun input.md [pandoc-options]
 # see https://github.com/mb21/panrun
 
 require 'yaml'
@@ -45,42 +45,52 @@ pandoc_opts = pandoc_opts.split(' ').map do |o|
   end
 end
 
-meta = YAML.load_file input_file
-args = []
-if meta = meta["output"]
-  out_key = output_format + "_document"
-  if meta = meta[out_key]
-    meta.each do |key, val|
-      # check whether `key` is an option that can be
-      # used with the installed pandoc version
+def get_args(meta, pandoc_opts)
+  args = []
+  meta.each do |key, val|
+    # check whether `key` is an option that can be
+    # used with the installed pandoc version
+    if pandoc_opts.include? key
+      opt = key
+    else
+      # since RMarkdown YAML uses e.g. `toc_depth` instead of `toc-depth`
+      # try that as well:
+      key = key.gsub('_', '-')
       if pandoc_opts.include? key
         opt = key
-      else
-        # since RMarkdown YAML uses e.g. `toc_depth` instead of `toc-depth`
-        # try that as well:
-        key = key.gsub('_', '-')
-        if pandoc_opts.include? key
-          opt = key
-        end
-      end
-
-      if opt && val != false
-        args.push "--" ++ opt
-        if not (val.nil? || val.is_a?(TrueClass))
-          args.push val.to_s
-        end
       end
     end
-  else
-    abort "Could not find key 'output.#{out_key}' in YAML"
+
+    if opt && val != false
+      args.push "--" ++ opt
+      if not (val.nil? || val.is_a?(TrueClass))
+        args.push val.to_s
+      end
+    end
   end
-else
-  abort "Could not find key 'output' in YAML"
+
+  if more_args = meta['pandoc_args']
+    args.concat more_args
+  end
+  return args
 end
 
-if more_args = meta['pandoc_args']
-  args.concat more_args
-end
+args = if meta = YAML.load_file(input_file)["output"]
+         if meta[output_format]
+           # try e.g. output.html
+           get_args meta[output_format], pandoc_opts
+         else
+           out_key = output_format + "_document"
+           if meta[out_key]
+             # try e.g. output.html_document
+             get_args meta[out_key], pandoc_opts
+           else
+             abort "Could not find anything in either 'output.#{output_format}' or 'output.#{out_key}' in YAML."
+           end
+         end
+       else
+         abort "Could not find key 'output' in YAML"
+       end
 
 args = ["pandoc", input_file] + args + ARGV[1..-1]
 
