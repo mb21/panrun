@@ -8,48 +8,48 @@ if input_file.nil? || input_file[0] == "-"
         'For more info, see https://github.com/mb21/panrun'
 end
 
-# determine output file
-output_file = input_file + ".html"
-ARGV.each_with_index do |a, i|
-  if a == "-o" || a == "--output"
-    output_file = ARGV[i+1]
-  elsif a.start_with? "--output="
-    output_file = a[9..-1]
+def get_output_format()
+  output_file = nil
+  ARGV.each_with_index do |a, i|
+    if a == "-o" || a == "--output"
+      output_file = ARGV[i+1]
+    elsif a.start_with? "--output="
+      output_file = a[9..-1]
+    end
   end
+  output_format = nil
+  ARGV.each_with_index do |a, i|
+    if a == "-t" || a == "--to"
+      output_format = ARGV[i+1]
+    elsif a.start_with? "--to="
+      output_format = a[5..-1]
+    end
+  end
+  if output_format.nil?
+    if !output_file.nil? && output_file.include?(".")
+      output_format = output_file.split(".").last
+      if ["pdf", "tex"].include? output_format
+        output_format = "latex"
+      end
+    end
+  end
+  return output_format
 end
 
-# determine output format
-output_format = nil
-ARGV.each_with_index do |a, i|
-  if a == "-t" || a == "--to"
-    output_format = ARGV[i+1]
-  elsif a.start_with? "--to="
-    output_format = a[5..-1]
-  end
-end
-if output_format.nil?
-  if output_file.nil? || !output_file.include?(".")
-    abort "could not determine output format"
-  else
-    output_format = output_file.split(".").last
-    if ["pdf", "tex"].include? output_format
-      output_format = "latex"
+def get_pandoc_opts()
+  opts = %x(pandoc --bash-completion).scan(/opts\=\"([^"]*)/).first.first
+
+  # strip the two preceding dashes and ignore one-letter variants
+  opts.split(' ').map do |o|
+    if o[0..1] == "--"
+      o[2..-1]
     end
   end
 end
 
-# ask pandoc for possible options
-pandoc_opts = %x(pandoc --bash-completion).scan(/opts\=\"([^"]*)/).first.first
-
-# strip the two preceding dashes and ignore one-letter variants
-pandoc_opts = pandoc_opts.split(' ').map do |o|
-  if o[0..1] == "--"
-    o[2..-1]
-  end
-end
-
 # convert a meta-hash to an arguments-array
-def get_args(meta, pandoc_opts)
+def get_args(meta)
+  pandoc_opts = get_pandoc_opts()
   args = []
   meta.each do |key, val|
     # check whether `key` is an option that can be
@@ -93,15 +93,31 @@ def get_args(meta, pandoc_opts)
 end
 
 args = if meta = YAML.load_file(input_file)["output"]
+         output_format = get_output_format()
+         if output_format.nil?
+           if meta.is_a?(Hash) && meta.first
+             # fallback to the first output key (hashes are ordered in ruby)
+             output_format = meta.first[0]
+             meta_val = meta.first[1]
+             if not meta_val["to"] || meta_val["output"]
+               STDERR.puts "panrun: [WARNING] defaulting to the YAML in output.#{output_format},\n"\
+                 "  but pandoc may not default to the same format.\n"\
+                 "  It is recommended to add a `to:` or `output:` field to your YAML."
+             end
+           else
+             abort "Could not find any output format in YAML."
+           end
+         end
+
          # lookup format, else try various rmarkdown formats
          if meta_out = meta[output_format]
-           get_args meta_out, pandoc_opts
+           get_args meta_out
          elsif meta_doc = meta[output_format + "_document"]
-           get_args meta_doc, pandoc_opts
+           get_args meta_doc
          elsif output_format == "latex" && meta_pdf = meta["pdf_document"]
-           get_args meta_pdf, pandoc_opts
+           get_args meta_pdf
          elsif meta_pres = meta[output_format + "_presentation"]
-           get_args meta_pres, pandoc_opts
+           get_args meta_pres
          else
            abort "Could not find YAML key for detected output format '#{output_format}'."
          end

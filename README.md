@@ -18,8 +18,10 @@ with the following `input.md`:
       latex:
         toc: true
         toc-depth: 3
+        output: test.pdf
+        template: letter.tex
         metadata:
-          subtitle: Some latex-only subtitle
+          fontsize: 12pt
     ---
 
     # my content
@@ -28,14 +30,14 @@ Will execute:
 
     pandoc test.md --standalone --toc --include-in-header foo.css --include-in-header bar.js
 
-Note how panrun defaults to the `html` format.
+Note how panrun defaults to using the first key in the YAML, in this case `html`.
 
 
 ## Usage
 
     panrun input-file [pandoc-options]
 
-You can also supply more options, but only _after_ the input file. They will be forwarded to pandoc. Panrun also looks at the `-o`, `--output`, `-t` and `--to` options to determine the output format. For example:
+You can also supply more options, but only _after_ the input file. They will be forwarded to pandoc. Panrun also looks at the `-o` (`--output`) and `-t` (`--to`) options to determine the output format. For example:
 
     panrun input.md -t latex -o test.pdf
 
