@@ -57,14 +57,18 @@ The input-file doesn't even have to be a markdown file. As long as it starts wit
 - Panrun doesn't hardcode or assume anything about the options. It simply asks your installed pandoc which options it suppors (through `pandoc --bash-completion`) and ignores the unknown options in your YAML.
 - The idea is to be somewhat compatible with [rmarkdown's document format](https://bookdown.org/yihui/rmarkdown/output-formats.html). Therefore you can use, for example, either the `html` or `html_document` key (or even `pdf_document` or `slidy_presentation`), or either `toc-depth` or `toc_depth`, and the value of `pandoc_args` is also passed on. (However, as opposed to rmarkdown, panrun doesn't do anything more than passing on the options it finds.) Question: is this useful to anyone, or does this introduce more confusion, since a lot of rmarkdown-options will be silently ignored?
 - If you're looking for more than a simple wrapper script, have a look at [panzer](https://github.com/msprev/panzer) or [pandocomatic](https://github.com/htdebeer/pandocomatic).
-- Work in progress, look at the source!
+- Look at the source, it's really quite minimal!
 - Possible TODOs:
-  - [ ] Look for non-format specific options directly in the `output` mapping?
-  - [ ] Change usage to `panrun [options] input.md [pandoc-options]`. Options could be `-m theme.yaml`, which would also look for files in `~/.panrun`?
+  - [ ] Look for `~/.panrun/default.yaml` file and merge that with per-document options.
+  - [ ] If YAML contained e.g. `style: letter`, could look for `~/.panrun/letter.yaml`.
+  - [ ] Change usage to `panrun [options] input.md [pandoc-options]`, so we could pass the target format to panrun without worrying about it having the same name as a pandoc format. For example, `panrun -t html_pdf input.md` could look for the `html_pdf` key in the `output` field in the YAML.
+  - [ ] Look for non-format specific options directly in the `output` mapping.
 
 
 ## Installation
 
-[Download panrun](https://raw.githubusercontent.com/mb21/panrun/master/panrun) and place it somewhere on your `PATH`. Make sure the file has no extension and make it executable. On macOS/Linux:
+1. [Download panrun](https://raw.githubusercontent.com/mb21/panrun/master/panrun)
+2. Place the file somewhere on your `PATH` (e.g. in `/usr/local/bin/`)
+3. Make sure the file has no extension and make it executable. On macOS/Linux (for Windows [read this](https://stackoverflow.com/questions/1422380/)):
 
-    chmod +x ./panrun
+       chmod +x ./panrun
