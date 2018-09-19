@@ -50,6 +50,20 @@ Thus `panrun *.md` will work, as long as the YAML is found in the alphabetically
 The input-file doesn't even have to be a markdown file. As long as it starts with a YAML block, it should work.
 
 
+### Styles/defaults
+
+If you put some YAML in `~/.panrun/default.yaml` (see `panrun -h` for the Windows location), panrun will merge this with the YAML in your input file and add the `--metadata-file` option when calling pandoc. The YAML should be in the same format as always, for example:
+
+    ---
+    author: Always Me
+    output:
+      html:
+        standalone: true
+    ---
+
+Finally, you can e.g. put `style: letter` in the YAML of your input document. In that case, panrun will look for `~/.panrun/letter.yaml` instead of `default.yaml`.
+
+
 ## Design
 
 - Panrun should run with no dependencies except `ruby >= 2.3.3`, which is the builtin in macOS 10.13.
@@ -57,12 +71,11 @@ The input-file doesn't even have to be a markdown file. As long as it starts wit
 - Panrun doesn't hardcode or assume anything about the options. It simply asks your installed pandoc which options it suppors (through `pandoc --bash-completion`) and ignores the unknown options in your YAML.
 - The idea is to be somewhat compatible with [rmarkdown's document format](https://bookdown.org/yihui/rmarkdown/output-formats.html). Therefore you can use, for example, either the `html` or `html_document` key (or even `pdf_document` or `slidy_presentation`), or either `toc-depth` or `toc_depth`, and the value of `pandoc_args` is also passed on. (However, as opposed to rmarkdown, panrun doesn't do anything more than passing on the options it finds.) Question: is this useful to anyone, or does this introduce more confusion, since a lot of rmarkdown-options will be silently ignored?
 - If you're looking for more than a simple wrapper script, have a look at [panzer](https://github.com/msprev/panzer) or [pandocomatic](https://github.com/htdebeer/pandocomatic).
-- Look at the source, it's really quite minimal!
+- Look at the source, it's really quite minimal! (In the end, I couldn't resist adding another ~40 lines of code for the defaults functionality...)
 - Possible TODOs:
-  - [ ] Look for `~/.panrun/default.yaml` file and merge that with per-document options.
-  - [ ] If YAML contained e.g. `style: letter`, could look for `~/.panrun/letter.yaml`.
   - [ ] Change usage to `panrun [options] input.md [pandoc-options]`, so we could pass the target format to panrun without worrying about it having the same name as a pandoc format. For example, `panrun -t html_pdf input.md` could look for the `html_pdf` key in the `output` field in the YAML.
-  - [ ] Look for non-format specific options directly in the `output` mapping.
+  - [ ] Tests
+  - [ ] Look for non-format specific options directly in the `output` mapping?
 
 
 ## Installation

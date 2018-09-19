@@ -90,15 +90,60 @@ def output_key_name()
   "output"
 end
 
+def data_dir_name()
+  if ENV['APPDATA']
+    # Windows
+    File.join ENV['APPDATA'], "panrun"
+  else
+    # POSIX
+    File.join Dir.home, ".panrun"
+  end
+end
+
+# try to load default YAML from other files and merge it with local YAML
+def get_meta_from_other_file(meta, style=nil)
+  if not style.is_a?(String)
+    style = "default"
+  end
+  data_dir = data_dir_name()
+  file_name = if [".", "..", "/", "\\"].include? style[0]
+                if File.file? style
+                  style
+                else
+                 abort "Could not find file #{style}"
+                end
+              else
+                # look in ~/.panrun/
+                name = File.join(data_dir, style + ".yaml")
+                if File.file? name
+                  name
+                else
+                  nil
+                end
+              end
+  file_meta, args = if file_name && m = YAML.load_file(file_name)
+                      [ m[output_key_name] || {}, ["--metadata-file", file_name] ]
+                    else
+                      [{}, []]
+                    end
+  file_meta.each do |format, _|
+    meta[format] = file_meta[format].merge( meta[format] || {} )
+  end
+  return [meta, args]
+end
+
 
 # determine input file
 input_file = ARGV[0]
 if input_file.nil? || input_file[0] == "-"
   abort "Usage: panrun input.md [options]\n\n"\
+        "Looking for default.yaml etc. in #{data_dir_name}\n"\
         "For more info, see https://github.com/mb21/panrun"
 end
 
-args = if meta = YAML.load_file(input_file)[output_key_name]
+yaml = YAML.load_file(input_file)
+args = if meta = yaml[output_key_name]
+         meta, file_arg = get_meta_from_other_file(meta, yaml["style"])
          output_format = get_output_format()
          if output_format.nil?
            if meta.is_a?(Hash) && meta.first
@@ -131,7 +176,7 @@ args = if meta = YAML.load_file(input_file)[output_key_name]
          abort "Could not find key '#{output_key_name}' in YAML"
        end
 
-args = ["pandoc", input_file] + args + ARGV[1..-1]
+args = ["pandoc", input_file] + args + file_arg + ARGV[1..-1]
 
 STDERR.puts "panrun calling: " + args.join(' ')
 
