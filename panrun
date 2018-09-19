@@ -1,13 +1,7 @@
 #!/usr/bin/env ruby
 require 'yaml'
 
-# determine input file
-input_file = ARGV[0]
-if input_file.nil? || input_file[0] == "-"
-  abort "Usage: panrun input.md [options]\n\n"\
-        'For more info, see https://github.com/mb21/panrun'
-end
-
+# guess output_format from ARGV
 def get_output_format()
   output_file = nil
   ARGV.each_with_index do |a, i|
@@ -94,6 +88,14 @@ end
 
 def output_key_name()
   "output"
+end
+
+
+# determine input file
+input_file = ARGV[0]
+if input_file.nil? || input_file[0] == "-"
+  abort "Usage: panrun input.md [options]\n\n"\
+        "For more info, see https://github.com/mb21/panrun"
 end
 
 args = if meta = YAML.load_file(input_file)[output_key_name]
