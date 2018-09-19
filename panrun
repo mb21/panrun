@@ -92,7 +92,11 @@ def get_args(meta)
   return args
 end
 
-args = if meta = YAML.load_file(input_file)["output"]
+def output_key_name()
+  "output"
+end
+
+args = if meta = YAML.load_file(input_file)[output_key_name]
          output_format = get_output_format()
          if output_format.nil?
            if meta.is_a?(Hash) && meta.first
@@ -100,7 +104,7 @@ args = if meta = YAML.load_file(input_file)["output"]
              output_format = meta.first[0]
              meta_val = meta.first[1]
              if not meta_val["to"] || meta_val["output"]
-               STDERR.puts "panrun: [WARNING] defaulting to the YAML in output.#{output_format},\n"\
+               STDERR.puts "panrun: [WARNING] defaulting to the YAML in #{output_key_name}.#{output_format},\n"\
                  "  but pandoc may not default to the same format.\n"\
                  "  It is recommended to add a `to:` or `output:` field to your YAML."
              end
@@ -122,7 +126,7 @@ args = if meta = YAML.load_file(input_file)["output"]
            abort "Could not find YAML key for detected output format '#{output_format}'."
          end
        else
-         abort "Could not find key 'output' in YAML"
+         abort "Could not find key '#{output_key_name}' in YAML"
        end
 
 args = ["pandoc", input_file] + args + ARGV[1..-1]
