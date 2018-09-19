@@ -136,7 +136,7 @@ end
 # determine input file
 input_file = ARGV[0]
 if input_file.nil? || input_file[0] == "-"
-  abort "Usage: panrun input.md [options]\n\n"\
+  abort "Usage: panrun input.md [pandoc-options]\n\n"\
         "Looking for default.yaml etc. in #{data_dir_name}\n"\
         "For more info, see https://github.com/mb21/panrun"
 end
