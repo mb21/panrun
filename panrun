@@ -141,40 +141,42 @@ if input_file.nil? || input_file[0] == "-"
         "For more info, see https://github.com/mb21/panrun"
 end
 
+# load and merge various metadata
 yaml = YAML.load_file(input_file)
-args = if meta = yaml[output_key_name]
-         meta, file_arg = get_meta_from_other_file(meta, yaml["style"])
-         output_format = get_output_format()
-         if output_format.nil?
-           if meta.is_a?(Hash) && meta.first
-             # fallback to the first output key (hashes are ordered in ruby)
-             output_format = meta.first[0]
-             meta_val = meta.first[1]
-             if not meta_val["to"] || meta_val["output"]
-               STDERR.puts "panrun: [WARNING] defaulting to the YAML in #{output_key_name}.#{output_format},\n"\
-                 "  but pandoc may not default to the same format.\n"\
-                 "  It is recommended to add a `to:` or `output:` field to your YAML."
-             end
-           else
-             abort "Could not find any output format in YAML."
-           end
-         end
+doc_meta = yaml[output_key_name] || {}
+meta, file_arg = get_meta_from_other_file doc_meta, yaml["style"]
 
-         # lookup format, else try various rmarkdown formats
-         if meta_out = meta[output_format]
-           get_args meta_out
-         elsif meta_doc = meta[output_format + "_document"]
-           get_args meta_doc
-         elsif output_format == "latex" && meta_pdf = meta["pdf_document"]
-           get_args meta_pdf
-         elsif meta_pres = meta[output_format + "_presentation"]
-           get_args meta_pres
-         else
-           abort "Could not find YAML key for detected output format '#{output_format}'."
-         end
-       else
-         abort "Could not find key '#{output_key_name}' in YAML"
-       end
+# determine output format
+output_format = get_output_format()
+if output_format.nil?
+  if meta.is_a?(Hash) && meta.first
+    # fallback to the first output key (hashes are ordered in ruby)
+    output_format = meta.first[0]
+    meta_val = meta.first[1]
+    if not meta_val["to"] || meta_val["output"]
+      STDERR.puts "panrun: [WARNING] defaulting to the YAML for output format '#{output_format}',\n"\
+        "  but pandoc may not default to the same format.\n"\
+        "  It is recommended to add a `to:` or `output:` field to your YAML."
+    end
+  else
+    abort "Could not find any output format in YAML."
+  end
+end
+
+# lookup format in meta, else try various rmarkdown formats
+meta_out = if meta[output_format]
+             meta[output_format]
+           elsif meta[output_format + "_document"]
+             meta[output_format + "_document"]
+           elsif output_format == "latex" && meta["pdf_document"]
+             meta["pdf_document"]
+           elsif meta[output_format + "_presentation"]
+             meta[output_format + "_presentation"]
+           else
+             abort "Could not find YAML key for detected output format '#{output_format}'."
+           end
+
+args = get_args(meta_out)
 
 args = ["pandoc", input_file] + args + file_arg + ARGV[1..-1]
 
