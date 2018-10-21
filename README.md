@@ -50,7 +50,7 @@ Thus `panrun *.md` will work, as long as the YAML is found in the alphabetically
 The input-file doesn't even have to be a markdown file. As long as it starts with a YAML block, it should work.
 
 
-### Styles/defaults
+### Defaults and document types
 
 If you put some YAML in `~/.panrun/default.yaml` (see `panrun -h` for the Windows location), panrun will merge this with the YAML in your input file and add the `--metadata-file` option when calling pandoc. The YAML should be in the same format as always, for example:
 
@@ -61,7 +61,7 @@ If you put some YAML in `~/.panrun/default.yaml` (see `panrun -h` for the Window
         standalone: true
     ---
 
-Finally, you can e.g. put `style: letter` in the YAML of your input document. In that case, panrun will look for `~/.panrun/letter.yaml` instead of `default.yaml`.
+Finally, you can e.g. put `type: letter` in the YAML of your input document. In that case, panrun will look for `~/.panrun/letter.yaml` instead of `default.yaml`.
 
 
 ## Design

@@ -101,20 +101,20 @@ def data_dir_name()
 end
 
 # try to load default YAML from other files and merge it with local YAML
-def get_meta_from_other_file(meta, style=nil)
-  if not style.is_a?(String)
-    style = "default"
+def get_meta_from_other_file(meta, type=nil)
+  if not type.is_a?(String)
+    type = "default"
   end
   data_dir = data_dir_name()
-  file_name = if [".", "..", "/", "\\"].include? style[0]
-                if File.file? style
-                  style
+  file_name = if [".", "..", "/", "\\"].include? type[0]
+                if File.file? type
+                  type
                 else
-                 abort "Could not find file #{style}"
+                 abort "Could not find file #{type}"
                 end
               else
                 # look in ~/.panrun/
-                name = File.join(data_dir, style + ".yaml")
+                name = File.join(data_dir, type + ".yaml")
                 if File.file? name
                   name
                 else
@@ -144,7 +144,7 @@ end
 # load and merge various metadata
 yaml = YAML.load_file(input_file)
 doc_meta = yaml[output_key_name] || {}
-meta, file_arg = get_meta_from_other_file doc_meta, yaml["style"]
+meta, file_arg = get_meta_from_other_file doc_meta, yaml["type"]
 
 # determine output format
 output_format = get_output_format()
