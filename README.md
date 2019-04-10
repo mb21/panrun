@@ -11,7 +11,7 @@ with the following `input.md`:
     output:
       html:
         standalone: true
-        toc: true
+        output: test.html
         include-in-header:
           - foo.css
           - bar.js
@@ -28,7 +28,7 @@ with the following `input.md`:
 
 Will execute:
 
-    pandoc test.md --standalone --toc --include-in-header foo.css --include-in-header bar.js
+    pandoc test.md --standalone --output test.html --include-in-header foo.css --include-in-header bar.js
 
 Note how panrun defaults to using the first key in the YAML, in this case `html`.
 
