@@ -100,6 +100,16 @@ def data_dir_name()
   end
 end
 
+def load_yaml(file_name)
+  begin
+    # try ruby v3 arguments
+    YAML.load_file(file_name, permitted_classes:["Date"])
+  rescue ArgumentError
+    # fallback to ruby v2 arguments
+    YAML.load_file(file_name)
+  end
+end
+
 # try to load default YAML from other files and merge it with local YAML
 def get_meta_from_other_file(meta, type=nil)
   if not type.is_a?(String)
@@ -121,7 +131,7 @@ def get_meta_from_other_file(meta, type=nil)
                   nil
                 end
               end
-  file_meta, args = if file_name && m = YAML.load_file(file_name)
+  file_meta, args = if file_name && m = load_yaml(file_name)
                       [ m[output_key_name] || {}, ["--metadata-file", file_name] ]
                     else
                       [{}, []]
@@ -142,7 +152,7 @@ if input_file.nil? || input_file[0] == "-"
 end
 
 # load and merge various metadata
-yaml = YAML.load_file(input_file)
+yaml = load_yaml(input_file) || {}
 doc_meta = yaml[output_key_name] || {}
 meta, file_arg = get_meta_from_other_file doc_meta, yaml["type"]
 
