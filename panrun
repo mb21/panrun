@@ -31,7 +31,7 @@ def get_output_format()
 end
 
 def get_pandoc_opts()
-  opts = %x(pandoc --bash-completion).scan(/opts\=\"([^"]*)/).first.first
+  opts = %x(pandoc --completion=bash).scan(/opts\=\"([^"]*)/).first.first
 
   # strip the two preceding dashes and ignore one-letter variants
   opts.split(' ').map do |o|
